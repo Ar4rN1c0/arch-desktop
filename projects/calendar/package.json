@@ -1,0 +1,13 @@
+{
+  "name": "calendar",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "calendar.js",
+  "scripts": {
+    "dev": "node --watch calendar.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": ""
+}
