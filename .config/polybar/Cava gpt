@@ -1,6 +1,4 @@
-Certainly! To achieve a gradient of red colors for each bar, we need to extend the script to incorporate ANSI escape codes for different shades of red. In this example, we will use 256-color escape codes to create a gradient effect. 
-
-Below is the modified script:
+I apologize for the mistake. The issue is likely due to how `sed` interprets escape sequences. We need to ensure the escape sequences are correctly processed. Here’s an improved approach using `awk` instead of `sed` for better handling of escape sequences:
 
 ```bash
 #!/bin/bash
@@ -12,16 +10,6 @@ red_colors=(
     "\e[38;5;160m" "\e[38;5;161m" "\e[38;5;162m" "\e[38;5;163m"
     "\e[38;5;164m" "\e[38;5;165m" "\e[38;5;166m" "\e[38;5;167m"
 )
-
-dict="s/;//g;"
-
-# creating "dictionary" to replace char with colored bar
-i=0
-while [ $i -lt ${#bar} ]
-do
-    dict="${dict}s/$i/${red_colors[$i]}${bar:$i:1}$RESET/g;"
-    i=$((i=i+1))
-done
 
 # write cava config
 config_file="/tmp/polybar_cava_config"
@@ -38,15 +26,28 @@ ascii_max_range = 7
 
 # read stdout from cava
 cava -p $config_file | while read -r line; do
-  echo $line | sed $dict
+  echo "$line" | awk -v reset="$RESET" -v bar="$bar" -v colors="$(IFS=:; echo "${red_colors[*]}")" '
+  BEGIN {
+    split(colors, color_array, ":")
+  }
+  {
+    for (i = 1; i <= length($0); i++) {
+      char = substr($0, i, 1)
+      color_index = char + 1
+      printf "%s%s%s", color_array[color_index], substr(bar, char + 1, 1), reset
+    }
+    printf "\n"
+  }'
 done
 ```
 
 ### Explanation
-1. **Define Red Color Gradients:** We define an array `red_colors` containing ANSI escape codes for different shades of red.
-2. **Dictionary for Replacement:** The `dict` variable is created to map each number (0-7) to its corresponding colored bar character.
-3. **ANSI Escape Codes:** Each number in the input from Cava is replaced by a bar character of a specific shade of red, achieving the gradient effect.
-4. **Reset Color:** After each bar character, we append the reset code (`$RESET`) to ensure the color doesn't affect subsequent text.
 
-### Note
-Make sure your terminal supports 256-color mode for the gradients to display correctly. If the script doesn't work as expected, check your terminal's capabilities and settings.
+1. **ANSI Color Codes Array**: The `red_colors` array contains the escape codes for different shades of red.
+2. **Cava Configuration**: The configuration file is created as before.
+3. **Processing Output with `awk`**:
+   - The `awk` command is used to process each line of output.
+   - We pass the colors, reset code, and bar characters to `awk`.
+   - For each character in the line, `awk` calculates the corresponding color index and prints the bar character with the appropriate color.
+
+This approach ensures that the escape sequences are correctly interpreted and applied.
