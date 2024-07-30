@@ -1,4 +1,6 @@
-I apologize for the mistake. The issue is likely due to how `sed` interprets escape sequences. We need to ensure the escape sequences are correctly processed. Here’s an improved approach using `awk` instead of `sed` for better handling of escape sequences:
+Let's switch to a different approach by using a combination of `sed` and `printf` to ensure the escape sequences are correctly handled.
+
+Here’s an updated version of the script:
 
 ```bash
 #!/bin/bash
@@ -26,28 +28,21 @@ ascii_max_range = 7
 
 # read stdout from cava
 cava -p $config_file | while read -r line; do
-  echo "$line" | awk -v reset="$RESET" -v bar="$bar" -v colors="$(IFS=:; echo "${red_colors[*]}")" '
-  BEGIN {
-    split(colors, color_array, ":")
-  }
-  {
-    for (i = 1; i <= length($0); i++) {
-      char = substr($0, i, 1)
-      color_index = char + 1
-      printf "%s%s%s", color_array[color_index], substr(bar, char + 1, 1), reset
-    }
-    printf "\n"
-  }'
+  for ((i=0; i<${#line}; i++)); do
+    char="${line:$i:1}"
+    printf "%b%s%b" "${red_colors[$char]}" "${bar:$char:1}" "$RESET"
+  done
+  printf "\n"
 done
 ```
 
-### Explanation
+### Explanation:
 
 1. **ANSI Color Codes Array**: The `red_colors` array contains the escape codes for different shades of red.
 2. **Cava Configuration**: The configuration file is created as before.
-3. **Processing Output with `awk`**:
-   - The `awk` command is used to process each line of output.
-   - We pass the colors, reset code, and bar characters to `awk`.
-   - For each character in the line, `awk` calculates the corresponding color index and prints the bar character with the appropriate color.
+3. **Processing Output**: 
+   - For each line of output from `cava`, the script iterates through each character.
+   - It uses `printf` to print the corresponding colored bar character.
+   - The `%b` format specifier in `printf` ensures that escape sequences are interpreted correctly.
 
-This approach ensures that the escape sequences are correctly interpreted and applied.
+This should ensure that the colored bars are displayed properly.
